@@ -1,7 +1,8 @@
 # https://www.w3.org/Protocols/HTTP/AsImplemented.html
-import asyncio, logging, sys
+import asyncio, logging, sys, typing
 
 
+RouterType = typing.Callable[[str], typing.Awaitable[str]]
 server_name = 'simple http/0.9 server'
 
 def placeholder(title: str, header: str) -> str: return f"<html><head><title>{title}</title></head><body><h3>{header}</h3>{server_name}</body></html>"
@@ -9,8 +10,8 @@ async def echo_router(path: str) -> str: return placeholder("server ok", f"viewi
 async def error_placeholder(err: str) -> str: return placeholder("some error", err)
 
 
-async def server(host='0.0.0.0', port=8008, router=echo_router, error_reporter=error_placeholder):
-    async def server_impl(req):
+async def server(host: str = '0.0.0.0', port: int = 8008, router: RouterType = echo_router, error_reporter: RouterType = error_placeholder) -> None:
+    async def server_impl(req: str) -> str:
         space = req.index(' ')
         if space == -1:
             return await error_reporter("Bad request: no path")
@@ -22,7 +23,7 @@ async def server(host='0.0.0.0', port=8008, router=echo_router, error_reporter=e
             return await error_reporter("Unsupported method")
         return await router(path)
 
-    async def server_handler(reader, writer):
+    async def server_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         req = (await reader.readuntil()).decode('latin1').rstrip()
         logging.info(req)
 
