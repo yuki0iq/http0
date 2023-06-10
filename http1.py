@@ -100,6 +100,9 @@ def to_uri(s: str) -> typing.Optional[URI]:
 #   General:  Date, Pragma
 #   Request:  Authorization, From, If-Modified-Since, Referer, User-Agent
 #   Entity:   Allow, Content-Encoding, Content-Length, Content-Type, Expires, Last-Modified, <other>
+def parse_request(req: str, head: list[str]) -> Request:
+    # ...
+
 
 
 def placeholder(title: str, header: str) -> str: return f"<html><head><title>{title}</title></head><body><h3>{header}</h3>{server_name}</body></html>"
@@ -108,7 +111,7 @@ async def error_placeholder(err: str) -> str: return placeholder("some error", e
 
 
 async def server(host: str = '0.0.0.0', port: int = 8008) -> None:
-    async def request_handler(req: str) -> str:
+    async def request_handler(req: str, reader: asyncio.StreamedReader) -> str:
         
 
         space = req.index(' ')
@@ -123,7 +126,14 @@ async def server(host: str = '0.0.0.0', port: int = 8008) -> None:
         return await router(path)
 
     async def server_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        req = (await reader.readuntil()).decode('latin1').rstrip()
+        try:
+            head = await reader.recvuntil(b'\r\n\r\n')
+        except:
+            # BAD HEaDER
+            pass
+        
+        req, *headers = head.decode('utf8').replace('\r\n ', ' ').replace('\r\n\t', ' ').split('\r\n')
+        # req = (await reader.readuntil()).decode('latin1').rstrip()
         logging.info(req)
 
         resp = await request_handler(req)
