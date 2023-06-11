@@ -107,6 +107,7 @@ class Request(typing.NamedTuple):
     headers: dict[str, str]
     reader: asyncio.StreamReader
 
+
 def parse_request(req: str, head: list[str]) -> Request:
     # ...
 
