@@ -100,9 +100,15 @@ def to_uri(s: str) -> typing.Optional[URI]:
 #   General:  Date, Pragma
 #   Request:  Authorization, From, If-Modified-Since, Referer, User-Agent
 #   Entity:   Allow, Content-Encoding, Content-Length, Content-Type, Expires, Last-Modified, <other>
+class Request(typing.NamedTuple):
+    method: Method
+    path: URI
+    proto: str
+    headers: dict[str, str]
+    reader: asyncio.StreamReader
+
 def parse_request(req: str, head: list[str]) -> Request:
     # ...
-
 
 
 def placeholder(title: str, header: str) -> str: return f"<html><head><title>{title}</title></head><body><h3>{header}</h3>{server_name}</body></html>"
