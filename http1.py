@@ -7,6 +7,15 @@ import datetime
 server_name = f'YukiHTTP/1.0 on {platform.python_implementation()}/{platform.python_version()}'
 
 
+# TODO: POST, additional methods?
+# TODO: More convenient headers editor?
+# TODO: Additional headers support
+# TODO: proper CRLF handle in response headers (should never occur, 500?)
+# TODO: unescape of URL query's kv (and reverse...)
+# TODO: more clear interface for 3xx[Redirect]. What if every status will be a class?
+# TODO: HEAD, If-Modified-Since
+
+
 @enum.unique
 class Method(enum.Enum):
     GET = 1
@@ -55,17 +64,13 @@ def unescape(s: bytes) -> bytes:
     return s
 
 
-class KeyValueError(Exception):
-    pass
-
-
 def to_key_value(args: bytes, argsep: bytes = b'\r\n', kvsep: bytes = b':', escaped: bool = False, lstrip: bool = True) -> dict[str, str]:
     res: dict[str, str] = {}
     if args:
         for kv in args.split(argsep):
             pos = kv.find(kvsep)
             if pos == -1:
-                raise KeyValueError
+                continue
             k, v = kv[:pos], kv[pos+1:]
             if lstrip:
                 v = v.lstrip()
@@ -83,7 +88,7 @@ def to_path(s: bytes) -> URI:
     path, args = s[:qpos], s[qpos+1:]
 
     path_s = unescape(path).decode('utf8')
-    query_args = to_key_value(args, b'&', b'=', escaped=True, lstrip=False)) 
+    query_args = to_key_value(args, b'&', b'=', escaped=True, lstrip=False) 
     return URI(path=path_s, query_args=query_args)
 
 
@@ -120,7 +125,7 @@ def date_to_str(dt: datetime.datetime) -> str:
     # RFC1123
     weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][dt.weekday()]
     month = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.month]
-    return f"{weekday}, {dt.day:02} {month} {dt.year} {dt.hour}:{dt.minute}:{dt.second} GMT"
+    return f"{weekday}, {dt.day:02} {month} {dt.year} {dt.hour:02}:{dt.minute:02}:{dt.second:02} GMT"
 
 
 def make_response(proto: str, code: Status, expl: typing.Optional[str], head: dict[str, typing.Any], body: typing.Any) -> Response:
@@ -165,8 +170,6 @@ async def parse_request(reader: asyncio.StreamReader) -> typing.Union[Request, R
         return error(Status.BadRequest, 'Wrong request line format: not enough arguments')
     except KeyError:
         return error(Status.BadRequest, 'Server unsupported method')
-    except KeyValueError:
-        return error(Status.BadRequest, 'Bad query format')
 
     try:
         head = await reader.readuntil(b'\r\n\r\n')
@@ -178,8 +181,6 @@ async def parse_request(reader: asyncio.StreamReader) -> typing.Union[Request, R
         return error(Status.BadRequest, 'Connection break')
     except UnicodeError:
         return error(Status.BadRequest, 'UTF-8 decode error in headers')
-    except KeyValueError:
-        return error(Status.BadRequest, 'Bad header format')
 
     return Request(method, path, proto, headers, reader)
 
