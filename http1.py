@@ -187,7 +187,7 @@ async def parse_request(reader: asyncio.StreamReader) -> typing.Union[Request, R
 
 async def request_handler(req: Request) -> Response:
     res = ''.join([
-        "<html><head><title>{req.path}</title></head><body><table>",
+        f"<html><head><title>{req.path}</title></head><body><table>",
         "<tr><th>Key</th><th>Value</th></tr>",
         f"<tr><td>Server name</td><td><pre>{server_name}</pre></td></tr>",
         f"<tr><td>Protocol version</td><td><pre>{req.proto}</pre></td></tr>",
