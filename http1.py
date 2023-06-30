@@ -4,7 +4,7 @@ import logging, sys, platform
 import asyncio
 import datetime
 
-server_name = f'YukiHTTP/1.0 on {platform.python_implementation()}/{platform.python_version()}'
+server_name = f'YukiHTTP/1.0 ({platform.python_implementation()}/{platform.python_version()})'
 
 
 # TODO: POST, additional methods?
